@@ -6,6 +6,7 @@
 
 > 当前版本：**2.0.0-zh**（大版本；Terminal UI 与便携数据目录重构，详见
 > [CHANGELOG.md](CHANGELOG.md)）。
+> 学习版源码（逐文件中文注释）：[Arktis-Jaeger/Ourcamellia_Study](https://github.com/Arktis-Jaeger/Ourcamellia_Study)。
 
 本副本为**中文本地化版本**：所有用户可见界面、提示、反馈与文档均为中文，并对关键
 代码添加了中文注释。命令行命令名、协议帧、JSON 键、枚举 `name()` 输出以及 `@账户名`

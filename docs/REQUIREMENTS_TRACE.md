@@ -74,4 +74,4 @@ common 43, core 92, client 11, server 1, it 2 = 149 tests, all green on `mvn cle
 | 服务器标识（指纹派生）、改名/换 IP 识别、手工迁移 | `ChatPaths.serverId`、`LocalHistoryStore.registerServer` | `PortableHistoryStoreTest` |
 | 旧扁平历史兼容且不自动删除 | `LocalHistoryStore.loadInto` | `PortableHistoryStoreTest`、`LocalHistoryStoreTest` |
 | 原子写、损坏隔离、加密格式 | `AtomicFiles`、`LocalHistoryStore` | 既有 + 便携布局测试 |
-| Study 学习版与真实源码一致 | `Study/` | 去注释 token 校验脚本（116 文件） |
+| Study 学习版与真实源码一致 | [`Arktis-Jaeger/Ourcamellia_Study`](https://github.com/Arktis-Jaeger/Ourcamellia_Study) | 去注释 token 校验脚本（116 文件） |
