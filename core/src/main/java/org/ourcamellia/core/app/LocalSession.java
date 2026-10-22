@@ -671,6 +671,31 @@ public final class LocalSession implements AutoCloseable {
         return out;
     }
 
+    /**
+     * 返回对端当前已知的网络地址（host:port），用于本地会话列表展示。
+     *
+     * <p>数据来源按可靠性排序：
+     * <ol>
+     *   <li>已建立连接的实际对端地址；</li>
+     *   <li>最近一次发现响应中的地址与端口；</li>
+     *   <li>都没有时返回 null——UI 必须显示“地址未知”，不得编造。</li>
+     * </ol>
+     * 本方法只读取观察者已知的信息，不发起连接，也不改变任何状态。
+     */
+    public String peerEndpoint(String peerName) {
+        synchronized (lock) {
+            Peer peer = peers.get(peerName);
+            if (peer != null && peer.address != null && !peer.address.isBlank()) {
+                return peer.address;
+            }
+        }
+        DiscoveredPeer d = discovered.get(peerName);
+        if (d != null && d.expiresAt() > System.currentTimeMillis()) {
+            return d.host() + ":" + d.port();
+        }
+        return null;
+    }
+
     public List<DiscoveredPeer> discoveredPeers() {
         long now = System.currentTimeMillis();
         return discovered.values().stream()

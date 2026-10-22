@@ -113,7 +113,7 @@ public final class CommandSet {
                 (args, ctx) -> {
                     boolean on = requireOnOff(args.get(0));
                     app.setDiscoverable(on);
-                    return CommandResult.ok("可被发现：" + (on ? "on" : "off"));
+                    return CommandResult.ok("可被发现：" + (on ? "开启" : "关闭"));
                 });
         d.register(def("connectable", "切换入站连接接受开关（本地模式）",
                         "${connectable(\"on\"|\"off\")}",
@@ -121,7 +121,7 @@ public final class CommandSet {
                 (args, ctx) -> {
                     boolean on = requireOnOff(args.get(0));
                     app.setConnectable(on);
-                    return CommandResult.ok("可连接：" + (on ? "on" : "off"));
+                    return CommandResult.ok("可连接：" + (on ? "开启" : "关闭"));
                 });
         d.register(def("connect", "按地址发起连接尝试（本地模式）",
                         "${connect(\"host:port\")}",
@@ -231,7 +231,7 @@ public final class CommandSet {
                 throw new Errors.Validation("通知 " + index + " 不存在");
             }
             Notification n = list.get(index - 1);
-            return CommandResult.ok("通知 " + index + "：[" + n.kind() + "] 来自 " + n.from()
+            return CommandResult.ok("通知 " + index + "：[" + notificationKindLabel(n.kind()) + "] 来自 " + n.from()
                     + " — " + n.text(), "操作：${notify(" + index + ", \"pass\")}, "
                     + "${notify(" + index + ", \"reject\")}, ${notify(" + index + ", \"over\")}");
         }
@@ -319,8 +319,8 @@ public final class CommandSet {
         List<String> out = new ArrayList<>();
         for (String friend : app.friends()) {
             FriendState state = app.friendState(friend);
-            out.add(friend + " — " + state.name().toLowerCase() + " — "
-                    + app.peerStatus(friend).name().toLowerCase());
+            out.add(friend + " — " + friendStateLabel(state) + " — "
+                    + peerStatusLabel(app.peerStatus(friend)));
         }
         if (out.isEmpty()) {
             out.add("（尚无好友 —— 使用 ${friend-request(name)} 发起联系）");
@@ -376,14 +376,14 @@ public final class CommandSet {
         String key = currentKeyOrError();
         if (args.isEmpty()) {
             return CommandResult.ok(app.recording(key)
-                    ? "该会话自动录制已开启 (ON)"
-                    : "该会话自动录制已关闭 (OFF) —— 新消息仅驻留内存，直至 ${persist}");
+                    ? "该会话记录已开启"
+                    : "该会话记录已关闭 —— 新消息仅驻留内存，直至 ${persist}");
         }
         boolean on = requireOnOff(args.get(0));
         app.setRecording(key, currentTitle(), on);
         return CommandResult.ok(on
-                ? "已开启录制 —— 新消息将自动持久化"
-                : "已关闭录制 —— 新消息保留在内存缓冲中（已保存的历史记录不会被删除）");
+                ? "已开启记录 —— 新消息将自动持久化"
+                : "已关闭记录 —— 新消息保留在内存缓冲中（已保存的历史记录不会被删除）");
     }
 
     private CommandResult historyDelete(List<Arg> args, CommandDef.Context ctx) {
@@ -392,7 +392,12 @@ public final class CommandSet {
             throw new Errors.Usage("范围必须为 current、peer 或 all");
         }
         String arg = args.size() >= 2 ? args.get(1).asString() : null;
-        String confirm = prompts.promptLine("删除" + scope + "历史记录？此操作不可撤销。输入 YES 确认：");
+        String scopeLabel = switch (scope) {
+            case "current" -> "当前会话";
+            case "peer" -> "指定对端";
+            default -> "全部";
+        };
+        String confirm = prompts.promptLine("删除" + scopeLabel + "历史记录？此操作不可撤销。输入 YES 确认：");
         if (!"YES".equals(confirm)) {
             return CommandResult.ok("已取消删除 —— 未删除任何内容");
         }
@@ -421,12 +426,12 @@ public final class CommandSet {
         out.add("模式：" + (mode == SessionMode.NONE ? "菜单" : modeLabel(mode)));
         if (mode == SessionMode.LOCAL && app.local() != null) {
             out.add("本地名称：" + app.local().myName());
-            out.add("可被发现：" + (app.discoverable() ? "on" : "off")
-                    + "，可连接：" + (app.connectable() ? "on" : "off"));
+            out.add("可被发现：" + (app.discoverable() ? "开启" : "关闭")
+                    + "，可连接：" + (app.connectable() ? "开启" : "关闭"));
             ConversationRef cur = app.currentConversation();
             if (cur != null) {
-                out.add("会话：" + cur.title() + "（录制 "
-                        + (app.recording(app.local().convKey(cur.id())) ? "on" : "off") + "）");
+                out.add("会话：" + cur.title() + "（记录 "
+                        + (app.recording(app.local().convKey(cur.id())) ? "已开启" : "已关闭") + "）");
             }
         }
         if (mode == SessionMode.SERVER && app.server() != null) {
@@ -457,7 +462,7 @@ public final class CommandSet {
         List<String> out = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
             Notification n = list.get(i);
-            out.add((i + 1) + ". [" + n.kind().name().toLowerCase() + "] " + n.from() + ": " + n.text()
+            out.add((i + 1) + ". [" + notificationKindLabel(n.kind()) + "] " + n.from() + ": " + n.text()
                     + (n.kind() == NotificationKind.FRIEND_REQUEST
                     ? "  → ${notify(" + (i + 1) + ", \"pass\")} 或 ${notify(" + (i + 1) + ", \"reject\")}"
                     : "  → ${notify(" + (i + 1) + ", \"over\")}"));
@@ -507,6 +512,35 @@ public final class CommandSet {
     private String currentTitle() {
         ConversationRef cur = app.currentConversation();
         return cur == null ? "" : cur.title();
+    }
+
+    private static String friendStateLabel(FriendState state) {
+        return switch (state) {
+            case ACCEPTED -> "已接受";
+            case PENDING_OUT -> "已发出请求";
+            case PENDING_IN -> "待处理请求";
+            case REJECTED -> "已拒绝";
+            case EXPIRED -> "已过期";
+            case UNDELIVERABLE -> "无法送达";
+            case NONE -> "无关系";
+        };
+    }
+
+    private static String peerStatusLabel(org.ourcamellia.common.domain.PeerStatus status) {
+        return switch (status) {
+            case CONNECTED -> "在线";
+            case DISCOVERED -> "可被发现";
+            case UNREACHABLE -> "不可达";
+            case UNCONFIRMED -> "未知";
+        };
+    }
+
+    private static String notificationKindLabel(NotificationKind kind) {
+        return switch (kind) {
+            case FRIEND_REQUEST -> "好友请求";
+            case ANNOUNCEMENT -> "服务器公告";
+            case INFO -> "通知";
+        };
     }
 
     private static boolean requireOnOff(Arg arg) {

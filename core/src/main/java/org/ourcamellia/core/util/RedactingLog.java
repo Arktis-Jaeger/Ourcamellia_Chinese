@@ -52,7 +52,7 @@ public final class RedactingLog {
             root.addHandler(console);
         } catch (IOException e) {
             // Logging setup failure must not kill the product.
-            System.err.println("warning: log configuration failed: " + e.getMessage());
+            System.err.println("警告：日志配置失败：" + e.getMessage());
         }
     }
 

@@ -708,7 +708,7 @@ public final class ServerCore implements AutoCloseable {
                     throw new Errors.NotFound("没有名为 " + op.member());
                 }
                 if (g.members.contains(op.member()) || g.owner.equals(op.member())) {
-                    throw new Errors.Conflict(op.member() + " is already a member");
+                    throw new Errors.Conflict(op.member() + " 已经是该群组成员");
                 }
                 g.members.add(op.member());
                 addNotification(op.member(), new ServerStateStore.Notif(), n -> {
@@ -903,7 +903,7 @@ public final class ServerCore implements AutoCloseable {
                 throw new Errors.NotFound("不存在该账户：" + name);
             }
             if (store.state().admins.contains(name)) {
-                throw new Errors.Conflict(name + " is already an operator");
+                throw new Errors.Conflict(name + " 已经是运营者");
             }
             store.state().admins.add(name);
             store.save();

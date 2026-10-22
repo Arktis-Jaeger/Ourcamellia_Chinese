@@ -98,6 +98,16 @@ public final class ServerSession implements AutoCloseable {
     public String serverAddress() { return serverAddress; }
     public String serverName() { return serverName; }
     public String loggedInUser() { return loggedInUser; }
+
+    /** 当前服务器 TLS 证书指纹；未连接时为 null。用于聊天记录目录的稳定身份。 */
+    public String serverFingerprint() {
+        return session == null ? null : session.conn().remoteFingerprint();
+    }
+
+    /** 是否已经完成登录（用于 UI 在异步登录成功后切换页面）。 */
+    public boolean isLoggedIn() {
+        return loggedInUser != null;
+    }
     public String channelId() { return channelId; }
     public boolean isBot() { return bot; }
     public ConnSession session() { return session; }
@@ -119,6 +129,9 @@ public final class ServerSession implements AutoCloseable {
         }
         ServerConnection.connect(this, host, port, address);
         this.serverAddress = address;
+        // 连接建立后立即登记服务器目录：此时可能还不知道服务器名称，但 TLS 指纹
+        // 已经可用，足以生成稳定的服务器标识。收到 WELCOME 后再补全名称。
+        history.registerServer(convKeyPrefix(), address, null, serverFingerprint());
         events.onStatusChanged();
     }
 
@@ -130,6 +143,9 @@ public final class ServerSession implements AutoCloseable {
     void setWelcome(String serverName, String channelId, int unread, String policy, String note) {
         this.serverName = serverName;
         this.channelId = channelId;
+        // 补全服务器元数据（名称），并保留同一指纹对应的目录；若用户手工把目录
+        // 从旧 IP 移到新 IP，registerServer 会按服务器标识找到它。
+        history.registerServer(convKeyPrefix(), serverAddress, serverName, serverFingerprint());
         events.onInfo("已连接到服务器 '" + serverName + "' —— 注册审批策略：" + policy
                 + " —— " + note);
         events.onStatusChanged();
@@ -187,7 +203,13 @@ public final class ServerSession implements AutoCloseable {
 
     /** 注册审批回调：status 为服务器返回的审批结果（如 approved/pending），原样展示。 */
     void onRegisterResult(String status, String ticketId, String message) {
-        events.onInfo("注册：" + status + (message.isBlank() ? "" : " —— " + message));
+        String label = switch (status == null ? "" : status) {
+            case "approved" -> "已批准";
+            case "pending" -> "待审批";
+            case "rejected" -> "已拒绝";
+            default -> status;
+        };
+        events.onInfo("注册：" + label + (message.isBlank() ? "" : " —— " + message));
     }
 
     // ---- notifications ----

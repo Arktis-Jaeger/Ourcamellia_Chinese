@@ -49,7 +49,7 @@ public final class ConfigLoader {
                         .filter(c -> c.getName().equals(e.getKey()))
                         .findFirst()
                         .ifPresentOrElse(
-                                c -> merged.set(e.getKey(), e.getValue()),
+                                c -> mergeField(merged, e.getKey(), e.getValue()),
                                 () -> unknown.add(e.getKey()));
             });
             if (!unknown.isEmpty() && warnings != null) {
@@ -59,6 +59,22 @@ public final class ConfigLoader {
             return Json.convert(merged, type);
         } catch (Errors.OcException e) {
             throw new Errors.Validation("无效的配置文件 " + file + "：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 合并一个顶层字段。对于嵌套对象（例如 terminal），采用递归合并而不是整体替换：
+     * 否则用户在配置里只写 <code>{"terminal":{"mode":"OLD"}}</code> 时，
+     * 未写出的 <code>shiftEnterToSend</code> 会由 Jackson 填成 false，
+     * 从而破坏“缺省 true”的约定。数组和标量仍然整体替换。
+     */
+    private static void mergeField(ObjectNode target, String key, JsonNode incoming) {
+        JsonNode existing = target.get(key);
+        if (existing instanceof ObjectNode targetObj && incoming instanceof ObjectNode incomingObj) {
+            incomingObj.fields().forEachRemaining(entry ->
+                    mergeField(targetObj, entry.getKey(), entry.getValue()));
+        } else {
+            target.set(key, incoming);
         }
     }
 

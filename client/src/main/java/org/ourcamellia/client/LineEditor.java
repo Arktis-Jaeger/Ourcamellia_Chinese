@@ -142,7 +142,7 @@ final class LineEditor {
      * 可用宽度为 0 甚至负数。历史上这里会直接对负数宽度取子串，抛出
      * {@link StringIndexOutOfBoundsException}，导致拖动窗口（缩小宽度）时程序崩溃——
      * 修复方式是对宽度做下限钳制，并在超宽内容时只显示「尾部」保证光标始终可见
-     * （缺陷 B 的修复位置）。
+     * （见修复报告 FIX 2）。
      *
      * @param terminalWidth 留给输入行的可用列数；内部会钳制为至少 1
      */

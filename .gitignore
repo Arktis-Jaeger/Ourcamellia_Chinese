@@ -4,8 +4,13 @@ target/
 *.iml
 .vscode/
 .DS_Store
+# 运行时数据（便携式聊天记录、状态、日志）；仅忽略，不删除用户备份
 data/
 logs/
+*.corrupt-*
+
+# 本地配置文件可能包含运营者凭据，不应提交
+config.json
 
 # Build byproducts of maven-shade-plugin
 dependency-reduced-pom.xml

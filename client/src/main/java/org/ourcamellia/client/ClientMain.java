@@ -1,8 +1,10 @@
 package org.ourcamellia.client;
 
 import org.ourcamellia.common.Errors;
+import org.ourcamellia.common.config.ClientConfig;
 
 import java.io.IOException;
+import java.util.Locale;
 
 /** 客户端可执行入口。 */
 public final class ClientMain {
@@ -15,28 +17,40 @@ public final class ClientMain {
     static int run(String[] args) {
         try {
             CliSupport.Options options = CliSupport.parseArgs(args);
-            org.ourcamellia.common.config.ClientConfig config = CliSupport.loadConfigOnly(options);
+            ClientConfig config = CliSupport.loadConfigOnly(options);
             String secondaryPassword = null;
             if (config.secondaryPasswordProtectHistory()) {
                 secondaryPassword = resolveSecondaryPassword();
             }
             CliSupport.Launch launch = CliSupport.launch(options, secondaryPassword);
-            String mode = options.mode() != null ? options.mode() : launch.config().mode();
+
+            // 模式解析优先级：
+            //   1. 命令行 --mode（用户本次的显式选择）
+            //   2. 配置 terminal.mode（默认 OBSERVATORY）
+            //   3. 旧配置字段 mode（兼容）
+            // 不再根据“是否有控制台 / 终端尺寸”自动切换。auto 仅作为旧值的
+            // 兼容别名按 OBSERVATORY 处理，并且会打印一行说明。
+            String mode = options.mode() != null
+                    ? options.mode()
+                    : config.effectiveTerminalMode();
+            mode = mode.trim().toLowerCase(Locale.ROOT);
             if (mode.equals("auto")) {
-                // 自动模式：有真实控制台则用 Observatory，否则退化为 Old（管道/脚本）。
-                mode = System.console() != null ? "observatory" : "old";
+                System.err.println("提示：auto 模式已废弃，本次按 OBSERVATORY 运行；"
+                        + "请设置 terminal.mode=OBSERVATORY 或 OLD");
+                mode = "observatory";
             }
             switch (mode) {
                 case "old" -> new OldUi(launch.app(), System.in, System.out).run();
                 case "observatory" -> {
                     if (!ObservatoryUi.supported()) {
-                        System.err.println("当前终端不支持 observatory 模式；请改用 --mode old");
+                        System.err.println("当前终端不支持 Observatory 模式。请改用 --mode old，"
+                                + "或在配置中设置 terminal.mode=OLD");
                         return CliSupport.EXIT_USAGE;
                     }
-                    new ObservatoryUi(launch.app()).run();
+                    new ObservatoryUi(launch.app(), launch.dataDir()).run();
                 }
                 default -> {
-                    System.err.println("未知模式：" + mode);
+                    System.err.println("未知模式：" + mode + "；允许值为 observatory 或 old");
                     return CliSupport.EXIT_USAGE;
                 }
             }

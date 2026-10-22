@@ -56,3 +56,22 @@ common 43, core 92, client 11, server 1, it 2 = 149 tests, all green on `mvn cle
 | G2 | Secondary password ≠ login password; AEAD for protected data | P4 design | format tests | tests ✓ |
 | G3 | Group mode disclosure accuracy | UI + creation flow | disclosure tests | tests ✓ |
 | G4 | No silent persistence while recording OFF | LocalHistoryStore policy | persistence-boundary tests | tests ✓ |
+
+## 增量重构（Terminal UI 与便携数据目录）
+
+| 需求 | 实现位置 | 测试 |
+|---|---|---|
+| 菜单/列表焦点导航、Enter/Esc、表单 Tab | `client.ObservatoryUi` | `ObservatoryPtyIT`、双客户端 PTY 验收 |
+| 动态 `=`/`-` 分隔线与窗口 resize | `client.ObservatoryUi`、`client.UiText` | `UiTextTest`、`ObservatoryPtyIT`（60 次 SIGWINCH） |
+| 页面上下文标题（通知/服务器/本地/群名/私聊无标题） | `ObservatoryUi.pageTitle()`、`buildList()`、`buildChat()` | PTY 验收与源码审查 |
+| 全局命令栏与聊天命令/消息分离 | `ObservatoryUi.handlePageKey/handleChatKey` | 双客户端 PTY、旧模式脚本测试 |
+| `${help}` 全屏、滚动、返回原页面 | `ObservatoryUi.openHelp/closeHelp`、`HelpContent` | `ObservatoryPtyIT` |
+| Enter / Shift+Enter 策略 | `ChatInput`、`ClientConfig.Terminal` | `ChatInputTest`、`ClientConfigTest`、双客户端 PTY |
+| 草稿保留、异步消息不覆盖输入 | `ObservatoryUi.drafts/events` | 双客户端 PTY（draft/async/help） |
+| 默认 Observatory / 显式 OLD / 不自动切换 | `ClientMain`、`ClientConfig.effectiveTerminalMode()` | `ClientConfigTest`、CLI 验证 |
+| 便携数据目录（程序目录、拒绝 target/Study） | `AppPaths`、`CliSupport`、`ChatPaths` | `ClientConfigTest`、`ChatPathsTest`、CLI 验证 |
+| 局域网/服务器记录分离、同 IP 多服务器 | `ChatPaths`、`LocalHistoryStore` | `PortableHistoryStoreTest` |
+| 服务器标识（指纹派生）、改名/换 IP 识别、手工迁移 | `ChatPaths.serverId`、`LocalHistoryStore.registerServer` | `PortableHistoryStoreTest` |
+| 旧扁平历史兼容且不自动删除 | `LocalHistoryStore.loadInto` | `PortableHistoryStoreTest`、`LocalHistoryStoreTest` |
+| 原子写、损坏隔离、加密格式 | `AtomicFiles`、`LocalHistoryStore` | 既有 + 便携布局测试 |
+| Study 学习版与真实源码一致 | `Study/` | 去注释 token 校验脚本（116 文件） |

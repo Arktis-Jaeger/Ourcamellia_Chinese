@@ -90,6 +90,11 @@ public final class ClientApp implements AutoCloseable {
         return mode;
     }
 
+    /** 客户端配置的只读访问器；展示层用它读取 terminal.shiftEnterToSend 等选项。 */
+    public org.ourcamellia.common.config.ClientConfig config() {
+        return config;
+    }
+
     public boolean exitRequested() {
         return exitRequested;
     }
@@ -122,16 +127,16 @@ public final class ClientApp implements AutoCloseable {
     // ---------------- mode entry ----------------
 
     public void enterLocal(String name) {
-        ensureMode(SessionMode.NONE, "already in " + modeLabel());
+        ensureMode(SessionMode.NONE, "当前已在" + modeLabel());
         local = new LocalSession(config, store, history, events(), dataDir);
         local.start(name);
         mode = SessionMode.LOCAL;
-        events().onInfo("Local mode: you are '" + name + "' (identity fingerprint " + local.myFingerprint() + ")");
+        events().onInfo("本地模式：你为 '" + name + "'（身份指纹 " + local.myFingerprint() + "）");
         events().onStatusChanged();
     }
 
     public void connectServer(String address) {
-        ensureMode(SessionMode.NONE, "already in " + modeLabel());
+        ensureMode(SessionMode.NONE, "当前已在" + modeLabel());
         server = new ServerSession(config, store, history, events(), this);
         server.connect(address);
         mode = SessionMode.SERVER;

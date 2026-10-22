@@ -1,6 +1,4 @@
 {
-  "mode": "auto",
-  "dataDir": "~/.ourcamellia",
   "defaultRecording": true,
   "discoverable": true,
   "connectable": true,
@@ -15,5 +13,9 @@
   "secondaryPasswordProtectHistory": false,
   "secondaryPasswordIterations": 210000,
   "exitPromptOnBuffered": true,
-  "logLevel": "info"
+  "logLevel": "info",
+  "terminal": {
+    "mode": "OBSERVATORY",
+    "shiftEnterToSend": true
+  }
 }
